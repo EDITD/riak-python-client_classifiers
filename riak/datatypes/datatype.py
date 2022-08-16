@@ -101,10 +101,10 @@ class Datatype(object):
         :rtype: :class:`Datatype`
         """
         if not self.bucket:
-            raise ValueError('bucket property not assigned')
+            raise ValueError("bucket property not assigned")
 
         if not self.key:
-            raise ValueError('key property not assigned')
+            raise ValueError("key property not assigned")
 
         dtype, value, context = self.bucket._client._fetch_datatype(
             self.bucket, self.key, **params)
@@ -156,7 +156,7 @@ class Datatype(object):
         if not self.modified:
             raise ValueError("No operation to perform")
 
-        params.setdefault('return_body', True)
+        params.setdefault("return_body", True)
         self.bucket._client.update_datatype(self, **params)
         self.clear()
 

@@ -17,10 +17,10 @@ import re
 
 from cgi import parse_header
 from email import message_from_string
-from riak.util import decode_index_value
-from riak.client.index_page import CONTINUATION
+
 from riak import RiakError
-from six import PY2
+from riak.client.index_page import CONTINUATION
+from riak.util import decode_index_value
 
 
 class HttpStream(object):
@@ -32,7 +32,7 @@ class HttpStream(object):
 
     def __init__(self, response):
         self.response = response
-        self.buffer = ''
+        self.buffer = ""
         self.response_done = False
         self.resource = None
 
@@ -41,19 +41,11 @@ class HttpStream(object):
 
     def _read(self):
         chunk = self.response.read(self.BLOCK_SIZE)
-        if PY2:
-            if chunk == '':
-                self.response_done = True
-            self.buffer += chunk
-        else:
-            if chunk == b'':
-                self.response_done = True
-            self.buffer += chunk.decode('utf-8')
+        if chunk == b'':
+            self.response_done = True
+        self.buffer += chunk.decode("utf-8")
 
     def __next__(self):
-        raise NotImplementedError
-
-    def next(self):
         raise NotImplementedError
 
     def attach(self, resource):
@@ -66,41 +58,37 @@ class HttpStream(object):
 class HttpJsonStream(HttpStream):
     _json_field = None
 
-    def next(self):
+    def __next__(self):
         # Python 2.x Version
-        while '}' not in self.buffer and not self.response_done:
+        while "}" not in self.buffer and not self.response_done:
             self._read()
 
-        if '}' in self.buffer:
-            idx = self.buffer.index('}') + 1
+        if "}" in self.buffer:
+            idx = self.buffer.index("}") + 1
             chunk = self.buffer[:idx]
             self.buffer = self.buffer[idx:]
             jsdict = json.loads(chunk)
-            if 'error' in jsdict:
+            if "error" in jsdict:
                 self.close()
-                raise RiakError(jsdict['error'])
+                raise RiakError(jsdict["error"])
             field = jsdict[self._json_field]
             return field
         else:
             raise StopIteration
-
-    def __next__(self):
-        # Python 3.x Version
-        return self.next()
 
 
 class HttpKeyStream(HttpJsonStream):
     """
     Streaming iterator for list-keys over HTTP
     """
-    _json_field = u'keys'
+    _json_field = "keys"
 
 
 class HttpBucketStream(HttpJsonStream):
     """
     Streaming iterator for list-buckets over HTTP
     """
-    _json_field = u'buckets'
+    _json_field = "buckets"
 
 
 class HttpMultipartStream(HttpStream):
@@ -109,14 +97,14 @@ class HttpMultipartStream(HttpStream):
     """
     def __init__(self, response):
         super(HttpMultipartStream, self).__init__(response)
-        ctypehdr = response.getheader('content-type')
+        ctypehdr = response.getheader("content-type")
         _, params = parse_header(ctypehdr)
-        self.boundary_re = re.compile('\r?\n--%s(?:--)?\r?\n' %
-                                      re.escape(params['boundary']))
+        self.boundary_re = re.compile("\r?\n--%s(?:--)?\r?\n" %
+                                      re.escape(params["boundary"]))
         self.next_boundary = None
         self.seen_first = False
 
-    def next(self):
+    def __next__(self):
         # multipart/mixed starts with a boundary, then the first part.
         if not self.seen_first:
             self.read_until_boundary()
@@ -131,10 +119,6 @@ class HttpMultipartStream(HttpStream):
             return message
         else:
             raise StopIteration
-
-    def __next__(self):
-        # Python 3.x Version
-        return self.next()
 
     def try_match(self):
         self.next_boundary = self.boundary_re.search(self.buffer)
@@ -156,14 +140,10 @@ class HttpMapReduceStream(HttpMultipartStream):
     Streaming iterator for MapReduce over HTTP
     """
 
-    def next(self):
-        message = super(HttpMapReduceStream, self).next()
-        payload = json.loads(message.get_payload())
-        return payload['phase'], payload['data']
-
     def __next__(self):
-        # Python 3.x Version
-        return self.next()
+        message = super(HttpMapReduceStream, self).__next__()
+        payload = json.loads(message.get_payload())
+        return payload["phase"], payload["data"]
 
 
 class HttpIndexStream(HttpMultipartStream):
@@ -176,23 +156,19 @@ class HttpIndexStream(HttpMultipartStream):
         self.index = index
         self.return_terms = return_terms
 
-    def next(self):
-        message = super(HttpIndexStream, self).next()
+    def __next__(self):
+        message = super(HttpIndexStream, self).__next__()
         payload = json.loads(message.get_payload())
-        if u'error' in payload:
-            raise RiakError(payload[u'error'])
-        elif u'keys' in payload:
-            return payload[u'keys']
-        elif u'results' in payload:
-            structs = payload[u'results']
+        if "error" in payload:
+            raise RiakError(payload["error"])
+        elif "keys" in payload:
+            return payload["keys"]
+        elif "results" in payload:
+            structs = payload["results"]
             # Format is {"results":[{"2ikey":"primarykey"}, ...]}
             return [self._decode_pair(list(d.items())[0]) for d in structs]
-        elif u'continuation' in payload:
-            return CONTINUATION(payload[u'continuation'])
-
-    def __next__(self):
-        # Python 3.x Version
-        return self.next()
+        elif "continuation" in payload:
+            return CONTINUATION(payload["continuation"])
 
     def _decode_pair(self, pair):
         return (decode_index_value(self.index, pair[0]), pair[1])

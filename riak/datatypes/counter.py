@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
-
 from riak.datatypes.datatype import Datatype
 from riak.datatypes import TYPES
 
@@ -25,7 +23,7 @@ class Counter(Datatype):
     embedded within a :class:`~riak.datatypes.Map`.
     """
 
-    type_name = 'counter'
+    type_name = "counter"
     _type_error_msg = "Counters can only be integers"
 
     def _post_init(self):
@@ -39,7 +37,7 @@ class Counter(Datatype):
         """
         Whether this counter has staged increments.
         """
-        return self._increment is not 0
+        return self._increment != 0
 
     def to_op(self):
         """
@@ -47,7 +45,7 @@ class Counter(Datatype):
         :rtype: int, None
         """
         if not self._increment == 0:
-            return ('increment', self._increment)
+            return ("increment", self._increment)
 
     def increment(self, amount=1):
         """
@@ -70,7 +68,7 @@ class Counter(Datatype):
         self._increment -= amount
 
     def _check_type(self, new_value):
-        return isinstance(new_value, six.integer_types)
+        return isinstance(new_value, int)
 
 
-TYPES['counter'] = Counter
+TYPES["counter"] = Counter

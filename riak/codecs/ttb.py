@@ -13,43 +13,44 @@
 # limitations under the License.
 
 import datetime
-import six
 
-from erlastic import encode, decode
+from erlastic import decode, encode
 from erlastic.types import Atom
-
 from riak import RiakError
 from riak.codecs import Codec, Msg
 from riak.pb.messages import MSG_CODE_TS_TTB_MSG
 from riak.ts_object import TsColumns
-from riak.util import bytes_to_str, unix_time_millis, \
-    datetime_from_unix_time_millis
+from riak.util import (
+    bytes_to_str,
+    datetime_from_unix_time_millis,
+    unix_time_millis,
+)
 
-udef_a = Atom('undefined')
+udef_a = Atom("undefined")
 
-rpberrorresp_a = Atom('rpberrorresp')
-tsgetreq_a = Atom('tsgetreq')
-tsgetresp_a = Atom('tsgetresp')
-tsqueryreq_a = Atom('tsqueryreq')
-tsqueryresp_a = Atom('tsqueryresp')
-tsinterpolation_a = Atom('tsinterpolation')
-tsputreq_a = Atom('tsputreq')
-tsputresp_a = Atom('tsputresp')
-tsdelreq_a = Atom('tsdelreq')
-timestamp_a = Atom('timestamp')
+rpberrorresp_a = Atom("rpberrorresp")
+tsgetreq_a = Atom("tsgetreq")
+tsgetresp_a = Atom("tsgetresp")
+tsqueryreq_a = Atom("tsqueryreq")
+tsqueryresp_a = Atom("tsqueryresp")
+tsinterpolation_a = Atom("tsinterpolation")
+tsputreq_a = Atom("tsputreq")
+tsputresp_a = Atom("tsputresp")
+tsdelreq_a = Atom("tsdelreq")
+timestamp_a = Atom("timestamp")
 
 
 class TtbCodec(Codec):
-    '''
+    """
     Erlang term-to-binary Encoding and decoding methods for TcpTransport
-    '''
+    """
 
     def __init__(self, **unused_args):
         super(TtbCodec, self).__init__(**unused_args)
 
     def parse_msg(self, msg_code, data):
         if msg_code != MSG_CODE_TS_TTB_MSG:
-            raise RiakError("TTB can't parse code: {}".format(msg_code))
+            raise RiakError(f"TTB can't parse code: {msg_code}")
         if len(data) > 0:
             decoded = decode(data)
             self.maybe_err_ttb(decoded)
@@ -74,11 +75,11 @@ class TtbCodec(Codec):
                 return ts
             elif isinstance(cell, bool):
                 return cell
-            elif isinstance(cell, six.text_type) or \
-                    isinstance(cell, six.binary_type) or \
-                    isinstance(cell, six.string_types):
+            elif isinstance(cell, str) or \
+                    isinstance(cell, bytes) or \
+                    isinstance(cell, str):
                 return cell
-            elif (isinstance(cell, six.integer_types)):
+            elif (isinstance(cell, int)):
                 return cell
             elif isinstance(cell, float):
                 return cell
@@ -114,14 +115,14 @@ class TtbCodec(Codec):
             raise RiakError("missing response object")
 
     def encode_timeseries_put(self, tsobj):
-        '''
+        """
         Returns an Erlang-TTB encoded tuple with the appropriate data and
         metadata from a TsObject.
 
         :param tsobj: a TsObject
         :type tsobj: TsObject
         :rtype: term-to-binary encoded object
-        '''
+        """
         if tsobj.columns:
             raise NotImplementedError('columns are not used')
 
@@ -184,7 +185,7 @@ class TtbCodec(Codec):
                 resp_colnames = resp_data[0]
                 resp_coltypes = resp_data[1]
                 tsobj.columns = self.decode_timeseries_cols(
-                        resp_colnames, resp_coltypes)
+                    resp_colnames, resp_coltypes)
                 resp_rows = resp_data[2]
                 tsobj.rows = []
                 for resp_row in resp_rows:

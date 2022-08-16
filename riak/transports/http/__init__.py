@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import socket
 import select
+import socket
 
-from six import PY2
 from riak.security import SecurityError, USE_STDLIB_SSL
-from riak.transports.pool import Pool
 from riak.transports.http.transport import HttpTransport
+from riak.transports.pool import Pool
 
 if USE_STDLIB_SSL:
     import ssl
@@ -28,20 +27,12 @@ else:
     from riak.transports.security import RiakWrappedSocket,\
         configure_pyopenssl_context
 
-if PY2:
-    from httplib import HTTPConnection, \
-        NotConnected, \
-        IncompleteRead, \
-        ImproperConnectionState, \
-        BadStatusLine, \
-        HTTPSConnection
-else:
-    from http.client import HTTPConnection, \
-        HTTPSConnection, \
-        NotConnected, \
-        IncompleteRead, \
-        ImproperConnectionState, \
-        BadStatusLine
+from http.client import HTTPConnection, \
+    HTTPSConnection, \
+    NotConnected, \
+    IncompleteRead, \
+    ImproperConnectionState, \
+    BadStatusLine
 
 
 class NoNagleHTTPConnection(HTTPConnection):
@@ -84,28 +75,11 @@ class RiakHTTPSConnection(HTTPSConnection):
         :param timeout: Number of seconds before timing out
         :type timeout: int
         """
-        if PY2:
-            # NB: it appears that pkey_file / cert_file are never set
-            # in riak/transports/http/connection.py#_connect() method
-            pkf = pkey_file
-            if pkf is None and credentials is not None:
-                pkf = credentials._pkey_file
-
-            cf = cert_file
-            if cf is None and credentials is not None:
-                cf = credentials._cert_file
-
-            HTTPSConnection.__init__(self,
-                                     host,
-                                     port,
-                                     key_file=pkf,
-                                     cert_file=cf)
-        else:
-            super(RiakHTTPSConnection, self). \
-                __init__(host=host,
-                         port=port,
-                         key_file=credentials._pkey_file,
-                         cert_file=credentials._cert_file)
+        super(RiakHTTPSConnection, self). \
+            __init__(host=host,
+                     port=port,
+                     key_file=credentials._pkey_file,
+                     cert_file=credentials._cert_file)
         self.pkey_file = pkey_file
         self.cert_file = cert_file
         self.credentials = credentials
@@ -129,7 +103,7 @@ class RiakHTTPSConnection(HTTPSConnection):
                     select.select([sock], [], [])
                     continue
                 except OpenSSL.SSL.Error as e:
-                    raise SecurityError('bad handshake - ' + str(e))
+                    raise SecurityError(f"bad handshake - {str(e)}")
                 break
 
             self.sock = RiakWrappedSocket(cxn, sock)
@@ -176,7 +150,7 @@ CONN_CLOSED_ERRORS = (
     NotConnected,
     IncompleteRead,
     ImproperConnectionState,
-    BadStatusLine
+    BadStatusLine,
 )
 
 

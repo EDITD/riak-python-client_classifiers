@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from riak import RiakError
-from six import string_types
 
 
 class RiakContent(object):
@@ -23,7 +22,7 @@ class RiakContent(object):
     are considered to be in conflict.
     """
     def __init__(self, robject, data=None, encoded_data=None, charset=None,
-                 content_type='application/json', content_encoding=None,
+                 content_type="application/json", content_encoding=None,
                  last_modified=None, etag=None, usermeta=None, links=None,
                  indexes=None, exists=False):
         self._robject = robject
@@ -79,12 +78,12 @@ class RiakContent(object):
         encoder = self._robject.bucket.get_encoder(self.content_type)
         if encoder:
             return encoder(value)
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             return value.encode()
         else:
-            raise TypeError('No encoder for non-string data '
-                            'with content type "{0}"'.
-                            format(self.content_type))
+            raise TypeError(
+                f"No encoder for non-string data with content type '{self.content_type}'",
+            )
 
     def _deserialize(self, value):
         if not value:
@@ -93,8 +92,9 @@ class RiakContent(object):
         if decoder:
             return decoder(value)
         else:
-            raise TypeError('No decoder for content type "{0}"'.
-                            format(self.content_type))
+            raise TypeError(
+                f"No encoder for non-string data with content type '{self.content_type}'",
+            )
 
     def add_index(self, field, value):
         """
@@ -110,8 +110,7 @@ class RiakContent(object):
         :rtype: :class:`RiakObject <riak.riak_object.RiakObject>`
         """
         if field[-4:] not in ("_bin", "_int"):
-            raise RiakError("Riak 2i fields must end with either '_bin'"
-                            " or '_int'.")
+            raise RiakError("Riak 2i fields must end with either '_bin' or '_int'.")
 
         self.indexes.add((field, value))
 
@@ -138,8 +137,7 @@ class RiakContent(object):
         elif field and value:
             self.indexes.remove((field, value))
         else:
-            raise RiakError("Cannot pass value without a field"
-                            " name while removing index")
+            raise RiakError("Cannot pass value without a field name while removing index")
 
         return self._robject
 

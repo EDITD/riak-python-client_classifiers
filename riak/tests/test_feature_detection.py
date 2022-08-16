@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# -*- coding: utf-8 -*-
 import unittest
 
 from riak.transports.feature_detect import FeatureDetection
@@ -209,5 +208,5 @@ class FeatureDetectionTest(unittest.TestCase):
         self.assertTrue(t.write_once())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

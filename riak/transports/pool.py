@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import threading
 
 from contextlib import contextmanager
@@ -277,17 +275,12 @@ class PoolIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        # Python 2.x version
+    def __next__(self):
         if len(self.targets) == 0:
             raise StopIteration
         if len(self.unlocked) == 0:
             self.__claim_resources()
         return self.unlocked.pop(0)
-
-    def __next__(self):
-        # Python 3.x version
-        return self.next()
 
     def __claim_resources(self):
         with self.lock:

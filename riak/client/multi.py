@@ -12,21 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from collections import namedtuple
-from threading import Thread, Lock, Event
-from multiprocessing import cpu_count
-from six import PY2
 
+from collections import namedtuple
+from multiprocessing import cpu_count
+from threading import Event, Lock, Thread
 from riak.riak_object import RiakObject
 from riak.ts_object import TsObject
 
-if PY2:
-    from Queue import Queue, Empty
-else:
-    from queue import Queue, Empty
+from queue import Queue, Empty
 
-__all__ = ['multiget', 'multiput', 'MultiGetPool', 'MultiPutPool']
+__all__ = ["multiget", "multiput", "MultiGetPool", "MultiPutPool"]
 
 
 try:
@@ -39,15 +34,15 @@ except NotImplementedError:
 
 #: A :class:`namedtuple` for tasks that are fed to workers in the
 #: multi get pool.
-Task = namedtuple('Task',
-                  ['client', 'outq', 'bucket_type', 'bucket', 'key',
-                   'object', 'options'])
+Task = namedtuple("Task",
+                  ["client", "outq", "bucket_type", "bucket", "key",
+                   "object", "options"])
 
 
 #: A :class:`namedtuple` for tasks that are fed to workers in the
 #: multi put pool.
-PutTask = namedtuple('PutTask',
-                     ['client', 'outq', 'object', 'options'])
+PutTask = namedtuple("PutTask",
+                     ["client", "outq", "object", "options"])
 
 
 class MultiPool(object):
@@ -56,7 +51,7 @@ class MultiPool(object):
     across many multi requests.
     """
 
-    def __init__(self, size=POOL_SIZE, name='unknown'):
+    def __init__(self, size=POOL_SIZE, name="unknown"):
         """
         :param size: the desired size of the worker pool
         :type size: int
@@ -82,8 +77,7 @@ class MultiPool(object):
         if not self._stop.is_set():
             self._inq.put(task)
         else:
-            raise RuntimeError("Attempted to enqueue an operation while "
-                               "multi pool was shutdown!")
+            raise RuntimeError("Attempted to enqueue an operation while multi pool was shutdown!")
 
     def start(self):
         """
@@ -98,9 +92,10 @@ class MultiPool(object):
                 # If we got the lock, go ahead and start the worker
                 # threads, set the started flag, and release the lock.
                 for i in range(self._size):
-                    name = "riak.client.multi-worker-{0}-{1}".format(
-                            self._name, i)
-                    worker = Thread(target=self._worker_method, name=name)
+                    worker = Thread(
+                        target=self._worker_method,
+                        name=f"riak.client.multi-worker-{self._name}-{i}",
+                    )
                     worker.daemon = False
                     worker.start()
                     self._workers.append(worker)
@@ -149,7 +144,7 @@ class MultiPool(object):
 
 class MultiGetPool(MultiPool):
     def __init__(self, size=POOL_SIZE):
-        super(MultiGetPool, self).__init__(size=size, name='get')
+        super(MultiGetPool, self).__init__(size=size, name="get")
 
     def _worker_method(self):
         """
@@ -184,7 +179,7 @@ class MultiGetPool(MultiPool):
 
 class MultiPutPool(MultiPool):
     def __init__(self, size=POOL_SIZE):
-        super(MultiPutPool, self).__init__(size=size, name='put')
+        super(MultiPutPool, self).__init__(size=size, name="put")
 
     def _worker_method(self):
         """
@@ -211,7 +206,7 @@ class MultiPutPool(MultiPool):
                 elif isinstance(obj, TsObject):
                     rv = task.client.ts_put(obj, **task.options)
                 else:
-                    raise ValueError('unknown obj type: %s'.format(type(obj)))
+                    raise ValueError(f"unknown obj type: {type(obj)}")
                 task.outq.put(rv)
             except KeyboardInterrupt:
                 raise
@@ -246,9 +241,9 @@ def multiget(client, keys, **options):
     transient_pool = False
     outq = Queue()
 
-    if 'pool' in options:
-        pool = options['pool']
-        del options['pool']
+    if "pool" in options:
+        pool = options["pool"]
+        del options["pool"]
     else:
         pool = MultiGetPool()
         transient_pool = True
@@ -262,9 +257,7 @@ def multiget(client, keys, **options):
         results = []
         for _ in range(len(keys)):
             if pool.stopped():
-                raise RuntimeError(
-                        'Multi-get operation interrupted by pool '
-                        'stopping!')
+                raise RuntimeError("Multi-get operation interrupted by pool stopping!")
             results.append(outq.get())
             outq.task_done()
     finally:
@@ -296,9 +289,9 @@ def multiput(client, objs, **options):
     transient_pool = False
     outq = Queue()
 
-    if 'pool' in options:
-        pool = options['pool']
-        del options['pool']
+    if "pool" in options:
+        pool = options["pool"]
+        del options["pool"]
     else:
         pool = MultiPutPool()
         transient_pool = True
@@ -312,9 +305,7 @@ def multiput(client, objs, **options):
         results = []
         for _ in range(len(objs)):
             if pool.stopped():
-                raise RuntimeError(
-                        'Multi-put operation interrupted by pool '
-                        'stopping!')
+                raise RuntimeError("Multi-put operation interrupted by pool stopping!")
             results.append(outq.get())
             outq.task_done()
     finally:
